@@ -3,6 +3,7 @@ package com.Oracle.Project.data;
 public record UserResponse(
         String name,
         String email,
-        String role
+        String role,
+        String  work_Mode
 ) {
 }
