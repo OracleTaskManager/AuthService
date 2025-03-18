@@ -1,4 +1,4 @@
-package com.Oracle.Project.data;
+package com.Oracle.AuthService.data;
 
 public record UserLogin(
         String email,

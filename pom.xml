@@ -9,10 +9,10 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.Oracle</groupId>
-	<artifactId>Project</artifactId>
+	<artifactId>AuthService</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>Project</name>
-	<description>Backend for Oracle task manager</description>
+	<name>AuthService</name>
+	<description>Auth Service for the Oracle task manager</description>
 	<url/>
 	<licenses>
 		<license/>

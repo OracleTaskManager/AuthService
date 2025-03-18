@@ -1,6 +1,6 @@
-package com.Oracle.Project.infra.security;
+package com.Oracle.AuthService.infra.security;
 
-import com.Oracle.Project.model.User;
+import com.Oracle.AuthService.model.User;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTCreationException;
@@ -16,7 +16,7 @@ import java.time.ZoneOffset;
 @Service
 public class TokenService {
 
-    @Value("${jwt.secret}")
+    @Value("${jwt.secret.oracle}")
     private String secret;
 
     public String generateToken(User user){
@@ -25,7 +25,7 @@ public class TokenService {
             return JWT.create()
                     .withIssuer("Oracle Project")
                     .withSubject(user.getEmail())
-                    .withClaim("id",user.getUserId())
+                    .withClaim("id",user.getUser_id())
                     .withClaim("role",user.getRole())
                     .withClaim("telegramChatId",user.getTelegramChatId())
                     .withExpiresAt(generateExpirationDate())

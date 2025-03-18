@@ -1,31 +1,27 @@
-package com.Oracle.Project.controller;
+package com.Oracle.AuthService.controller;
 
-import com.Oracle.Project.data.UserLogin;
-import com.Oracle.Project.data.UserRegister;
-import com.Oracle.Project.data.UserResponse;
-import com.Oracle.Project.infra.security.DatosJWTToken;
-import com.Oracle.Project.infra.security.TokenService;
-import com.Oracle.Project.model.User;
-import com.Oracle.Project.service.UserService;
-import oracle.jdbc.proxy.annotation.Post;
+import com.Oracle.AuthService.data.UserLogin;
+import com.Oracle.AuthService.data.UserRegister;
+import com.Oracle.AuthService.data.UserResponse;
+import com.Oracle.AuthService.infra.security.DatosJWTToken;
+import com.Oracle.AuthService.infra.security.TokenService;
+import com.Oracle.AuthService.model.User;
+import com.Oracle.AuthService.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.*;
 
-import java.net.URI;
+import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/auth")
+@RequestMapping("/users")
 public class UserController {
 
     @Autowired
@@ -38,7 +34,7 @@ public class UserController {
     private UserService userService;
 
     @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody UserRegister userRegister){
+    public ResponseEntity<?> register(@RequestBody @Valid UserRegister userRegister){
         User user = userService.register(userRegister);
         String jwtToken = tokenService.generateToken(user);
         Map<String, Object> response = Map.of(
@@ -61,4 +57,16 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
+
+    @GetMapping
+    @PreAuthorize("hasRole('Manager')")
+    public ResponseEntity<List<UserResponse>> getUsers(
+            @RequestParam(required = false) String role,
+            @RequestParam(required = false) String workMode,
+            @RequestParam(required = false) Boolean isActive
+    ){
+        List<UserResponse> users = userService.getUsersFiltered(role,workMode,isActive);
+        return ResponseEntity.ok(users);
+    }
+
 }

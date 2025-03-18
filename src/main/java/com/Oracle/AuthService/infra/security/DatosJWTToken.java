@@ -1,4 +1,4 @@
-package com.Oracle.Project.infra.security;
+package com.Oracle.AuthService.infra.security;
 
 public record DatosJWTToken(
         String jwtToken

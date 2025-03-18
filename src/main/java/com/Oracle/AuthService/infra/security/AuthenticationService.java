@@ -1,6 +1,6 @@
-package com.Oracle.Project.infra.security;
+package com.Oracle.AuthService.infra.security;
 
-import com.Oracle.Project.repository.UserRepository;
+import com.Oracle.AuthService.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;

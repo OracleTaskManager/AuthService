@@ -1,8 +1,7 @@
-package com.Oracle.Project.model;
+package com.Oracle.AuthService.model;
 
 
-import com.Oracle.Project.data.UserRegister;
-import com.Oracle.Project.data.Work_Mode;
+import com.Oracle.AuthService.data.UserRegister;
 import jakarta.persistence.*;
 import org.hibernate.annotations.GenerationTime;
 import org.springframework.security.core.GrantedAuthority;
@@ -49,60 +48,38 @@ public class User implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities(){
-        return List.of(new SimpleGrantedAuthority("ROLE_USER"));
+        return List.of(new SimpleGrantedAuthority("ROLE_"+this.role));
     }
 
-    public Long getUserId() {
-        return user_id;
-    }
+    public Long getUser_id() {return user_id;}
 
-    public void setUserId(Long userId) {
-        this.user_id = userId;
-    }
+    public void setUser_id(Long user_id) {this.user_id = user_id;}
 
-    public String getName() {
-        return name;
-    }
+    public String getName() {return name;}
 
-    public void setName(String name) {
-        this.name = name;
-    }
+    public void setName(String name) {this.name = name;}
 
-    public String getEmail() {
-        return email;
-    }
+    public String getEmail() {return email;}
 
-    public void setEmail(String email) {
-        this.email = email;
-    }
+    public void setEmail(String email) {this.email = email;}
 
-    public String getPassword() {
-        return password;
-    }
+    public String getPassword() {return password;}
 
-    public String  getWorkMode() {
-        return workMode;
-    }
+    public String  getWorkMode() { return workMode; }
 
-    public void setWorkMode(String  workMode) {
-        this.workMode = workMode;
-    }
-    public String getRole() {
-        return role;
-    }
+    public void setWorkMode(String  workMode) { this.workMode = workMode; }
 
-    public void setRole(String role) {
-        this.role = role;
-    }
+    public String getRole() { return role; }
 
-    public Long getTelegramChatId() {
-        return telegramChatId;
-    }
+    public void setRole(String role) { this.role = role; }
 
-    public void setTelegramChatId(Long telegramChatId) {
-        this.telegramChatId = telegramChatId;
-    }
+    public Long getTelegramChatId() { return telegramChatId; }
 
+    public void setTelegramChatId(Long telegramChatId) { this.telegramChatId = telegramChatId; }
+
+    public boolean isActive() {return isActive;}
+
+    public void setActive(boolean active) {isActive = active;}
 
     @Override
     public String getUsername() {

@@ -1,4 +1,4 @@
-package com.Oracle.Project.data;
+package com.Oracle.AuthService.data;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
