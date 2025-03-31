@@ -39,7 +39,7 @@ public class UserController {
         String jwtToken = tokenService.generateToken(user);
         Map<String, Object> response = Map.of(
                 "token", jwtToken,
-                "user", new UserResponse(user.getName(),user.getEmail(),user.getRole(),user.getWorkMode())
+                "user", new UserResponse(user.getUser_id(),user.getName(),user.getEmail(),user.getRole(),user.getWorkMode())
         );
         return ResponseEntity.ok(response);
     }

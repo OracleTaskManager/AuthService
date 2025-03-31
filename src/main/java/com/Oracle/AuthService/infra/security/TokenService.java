@@ -24,7 +24,6 @@ public class TokenService {
             Algorithm algorithm = Algorithm.HMAC256(secret);
             return JWT.create()
                     .withIssuer("Oracle Project")
-                    .withSubject(user.getEmail())
                     .withClaim("id",user.getUser_id())
                     .withClaim("role",user.getRole())
                     .withClaim("telegramChatId",user.getTelegramChatId())
@@ -35,7 +34,7 @@ public class TokenService {
         }
     }
 
-    public String getSubject(String token){
+    public Long getUserId(String token){
         if(token == null){
             throw new RuntimeException();
         }
@@ -46,14 +45,14 @@ public class TokenService {
                     .withIssuer("Oracle Project")
                     .build()
                     .verify(token);
-            verifier.getSubject();
         }catch(JWTVerificationException e){
             System.out.println(e.toString());
         }
-        if(verifier.getSubject() == null){
+        Long id = verifier.getClaim("id").asLong();
+        if(id == null){
             throw new RuntimeException("Invalid verifier");
         }
-        return verifier.getSubject();
+        return id;
     }
 
     public Instant generateExpirationDate(){

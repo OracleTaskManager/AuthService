@@ -1,5 +1,6 @@
 package com.Oracle.AuthService.infra.security;
 
+import com.Oracle.AuthService.model.User;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -27,9 +28,10 @@ public class SecurityFilter extends OncePerRequestFilter {
         var authHeader = request.getHeader("Authorization");
         if(authHeader != null && SecurityContextHolder.getContext().getAuthentication() == null){
             var token = authHeader.replace("Bearer ", "");
-            var subject = tokenService.getSubject(token);
-            if(subject != null){
-                var user = userRepository.findByEmail(subject);
+            var id = tokenService.getUserId(token);
+            if(id != null){
+                User user = userRepository.findById(id)
+                        .orElseThrow(() -> new RuntimeException("User not found"));
                 var authentication = new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             }

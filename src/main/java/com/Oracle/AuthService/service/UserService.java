@@ -31,6 +31,7 @@ public class UserService {
         List<User> users = userRepository.findByFilters(role,workMode,isActive);
         return users.stream()
                 .map(user -> new UserResponse(
+                        user.getUser_id(),
                         user.getName(),
                         user.getEmail(),
                         user.getRole(),
