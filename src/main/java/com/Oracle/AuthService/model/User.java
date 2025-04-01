@@ -41,8 +41,8 @@ public class User implements UserDetails {
         this.name = userRegister.name();
         this.email = userRegister.email();
         this.password = userRegister.password();
-        this.workMode = userRegister.work_mode().getDisplayName();
-        this.telegramChatId = userRegister.telegram_chat_id();
+        this.workMode = userRegister.workMode().getDisplayName();
+        this.telegramChatId = userRegister.telegramChatId();
         this.role = userRegister.role();
     }
 

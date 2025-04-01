@@ -3,14 +3,14 @@ package com.Oracle.AuthService.data;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 
-public enum Work_Mode {
+public enum WorkMode {
     ON_SITE("On Site"),
     REMOTE("Remote"),
     HYBRID("Hybrid");
 
     private final String displayName;
 
-    Work_Mode(String displayName) {
+    WorkMode(String displayName) {
         this.displayName = displayName;
     }
 
@@ -20,8 +20,8 @@ public enum Work_Mode {
     }
 
     @JsonCreator
-    public static Work_Mode fromString(String value) {
-        for (Work_Mode mode : Work_Mode.values()) {
+    public static WorkMode fromString(String value) {
+        for (WorkMode mode : WorkMode.values()) {
             if (mode.getDisplayName().equalsIgnoreCase(value.trim())) {
                 return mode;
             }

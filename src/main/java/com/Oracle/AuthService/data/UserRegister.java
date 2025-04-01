@@ -19,8 +19,8 @@ public record UserRegister(
         )
         String password,
 
-        Work_Mode work_mode,
-        Long telegram_chat_id,
+        WorkMode workMode,
+        Long telegramChatId,
         String role
 ) {
 }
