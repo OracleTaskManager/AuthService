@@ -24,4 +24,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
     List<User> findByFilters(@Param("role") String role,
                              @Param("workMode") String workMode,
                              @Param("isActive") Boolean isActive);
+
+    User findByTelegramChatId(Long l);
+
+    boolean existsByTelegramChatId(Long telegramChatId);
 }

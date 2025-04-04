@@ -1,9 +1,6 @@
 package com.Oracle.AuthService.service;
 
-import com.Oracle.AuthService.data.UserRegister;
-import com.Oracle.AuthService.data.UserResponse;
-import com.Oracle.AuthService.data.UserUpdate;
-import com.Oracle.AuthService.data.WorkMode;
+import com.Oracle.AuthService.data.*;
 import com.Oracle.AuthService.model.User;
 import com.Oracle.AuthService.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,6 +25,21 @@ public class UserService {
         User user = new User(userRegister);
         user.setPassword(hashedPassword);
         return userRepository.save(user);
+    }
+
+    public User findByTelegramChatId(TelegramLoginRequest telegramLoginRequest) {
+        return userRepository.findByTelegramChatId(telegramLoginRequest.chatId());
+    }
+
+    public void linkTelegramAccount(Long user_id, Long telegramChatId){
+        User user = userRepository.findById(user_id).orElseThrow(() -> new IllegalArgumentException("User not found"));
+        if(userRepository.existsByTelegramChatId(telegramChatId)){
+            throw new IllegalArgumentException("Telegram account already linked to another user");
+        }
+
+        user.setTelegramChatId(telegramChatId);
+        userRepository.save(user);
+
     }
 
     public User updateUser(Long user_id, UserUpdate userUpdate){

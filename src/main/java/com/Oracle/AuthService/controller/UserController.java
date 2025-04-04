@@ -1,14 +1,13 @@
 package com.Oracle.AuthService.controller;
 
-import com.Oracle.AuthService.data.UserLogin;
-import com.Oracle.AuthService.data.UserRegister;
-import com.Oracle.AuthService.data.UserResponse;
-import com.Oracle.AuthService.data.UserUpdate;
+import com.Oracle.AuthService.data.*;
 import com.Oracle.AuthService.infra.security.DatosJWTToken;
 import com.Oracle.AuthService.infra.security.TokenService;
 import com.Oracle.AuthService.model.User;
+import com.Oracle.AuthService.service.TelegramAuthService;
 import com.Oracle.AuthService.service.UserService;
 import jakarta.validation.Valid;
+import org.apache.coyote.Response;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -29,6 +28,9 @@ public class UserController {
 
     @Autowired
     private AuthenticationManager authenticationManager;
+
+    @Autowired
+    private TelegramAuthService telegramAuthService;
 
     @Autowired
     private TokenService tokenService;
@@ -62,6 +64,49 @@ public class UserController {
             return ResponseEntity.ok(new DatosJWTToken(JWTtoken));
         }catch(Exception e){
             System.out.println("Error during login: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @PostMapping("/telegram-login")
+    public ResponseEntity<?> telegramLogin(
+            @RequestHeader("X-Telegram-Bot-Secret") String incomingSecret,
+            @RequestBody @Valid TelegramLoginRequest telegramLoginRequest){
+        try{
+            telegramAuthService.validateRequest(incomingSecret);
+
+            User user = userService.findByTelegramChatId(telegramLoginRequest);
+            if(user == null){
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User not found");
+            }
+            String jwtToken = tokenService.generateToken(user);
+
+            Map<String, Object> response = Map.of(
+                    "jwtToken", jwtToken
+            );
+
+            return ResponseEntity.ok(response);
+        }catch (Exception e){
+            System.out.println("Error during Telegram login: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @PostMapping("/link-telegram")
+    public ResponseEntity<?> linkTelegramAccount(
+            @RequestHeader("Authorization") String token,
+            @RequestParam Long chatId
+    ){
+        try{
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            Long userId = ((User) authentication.getPrincipal()).getUser_id();
+
+            userService.linkTelegramAccount(userId, chatId);
+
+            return ResponseEntity.ok("Telegram account linked successfully");
+
+        }catch (Exception e){
+            System.out.println("Error linking Telegram account: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
