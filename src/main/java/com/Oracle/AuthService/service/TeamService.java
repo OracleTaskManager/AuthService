@@ -7,6 +7,8 @@ import com.Oracle.AuthService.repository.TeamRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 public class TeamService {
 
@@ -16,6 +18,14 @@ public class TeamService {
     public Team createTeam(TeamRegister teamRegister){
         Team team = new Team(teamRegister.teamName());
         return teamRepository.save(team);
+    }
+
+    public List<Team> getAllTeams(){
+        return teamRepository.findAll();
+    }
+
+    public List<Team> getMyTeams(Long user_id){
+        return teamRepository.findTeamByUserId(user_id);
     }
 
     public Team updateTeam(TeamUpdate teamUpdate){

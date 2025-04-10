@@ -10,6 +10,7 @@ import com.Oracle.AuthService.model.UserTeam;
 import com.Oracle.AuthService.service.TeamService;
 import com.Oracle.AuthService.service.UserTeamService;
 import jakarta.validation.Valid;
+import oracle.ucp.proxy.annotation.Pre;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,6 +19,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Repository;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.security.core.Authentication;
+
+import java.util.List;
 
 
 @RestController
@@ -45,6 +48,32 @@ public class TeamController {
             return ResponseEntity.ok(teamResponse);
         }catch(Exception e){
             System.out.println("Error during team creation: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @GetMapping("/")
+    @PreAuthorize("hasRole('Manager')")
+    public ResponseEntity<?> getAllTeams(){
+        try{
+            List<Team> teams = teamService.getAllTeams();
+            return ResponseEntity.ok(teams);
+        }catch(Exception e){
+            System.out.println("Error during fetching teams: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @GetMapping("/myteams")
+    public ResponseEntity<?> getMyTeams(){
+        try{
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            Long userId = ((User) authentication.getPrincipal()).getUser_id();
+
+            List<Team> teams = teamService.getMyTeams(userId);
+            return ResponseEntity.ok(teams);
+        }catch (Exception e){
+            System.out.println("Error during fetching my teams: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }

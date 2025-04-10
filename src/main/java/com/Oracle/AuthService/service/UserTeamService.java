@@ -1,10 +1,13 @@
 package com.Oracle.AuthService.service;
 
 import com.Oracle.AuthService.data.UserTeamRegister;
+import com.Oracle.AuthService.model.Team;
 import com.Oracle.AuthService.model.UserTeam;
 import com.Oracle.AuthService.repository.UserTeamRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 public class UserTeamService {
