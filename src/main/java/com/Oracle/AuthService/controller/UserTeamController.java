@@ -2,13 +2,11 @@ package com.Oracle.AuthService.controller;
 
 import com.Oracle.AuthService.data.UserTeamIdResponse;
 import com.Oracle.AuthService.data.UserTeamRegister;
+import com.Oracle.AuthService.model.UserTeam;
 import com.Oracle.AuthService.model.UserTeamId;
-import com.Oracle.AuthService.service.UserTeamIdService;
 import com.Oracle.AuthService.service.UserTeamService;
 import jakarta.validation.Valid;
-import oracle.ucp.proxy.annotation.Pre;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -23,10 +21,6 @@ public class UserTeamController {
     @Autowired
     private UserTeamService userTeamService;
 
-    @Autowired
-    private UserTeamIdService userTeamIdService;
-
-
     @PostMapping("/add")
     @PreAuthorize("hasRole('Manager')")
     public void addUserToTeam(@RequestBody @Valid UserTeamRegister userTeamRegister){
@@ -37,24 +31,24 @@ public class UserTeamController {
                 return;
             }
 
-            System.out.println("Adding user("+userTeamRegister.userId()+") to team("+userTeamRegister.teamId()+")");
-
             userTeamService.addUserToTeam(userTeamRegister);
         }catch (Exception e){
             System.out.println("Error during user team creation: " + e.getMessage());
         }
     }
 
-    @GetMapping("/user-team-ids")
-    public ResponseEntity<?> getAllUserTeamIds() {
+    @GetMapping("/")
+    public ResponseEntity<?> getAllUserTeams() {
         try{
-            List<UserTeamId> userTeamIds = userTeamIdService.findAll();
+            List<UserTeam> userTeams = userTeamService.findAll();
+            List<UserTeamIdResponse> userTeamIds = userTeams.stream()
+                    .map(userTeam -> new UserTeamIdResponse(userTeam.getUser_id(), userTeam.getTeam_id()))
+                    .toList();
             return ResponseEntity.ok(userTeamIds);
         } catch (Exception e){
-            System.out.println("Error during user team id's fetch: " + e.getMessage());
+            System.out.println("Error during user teams fetch: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
-
     }
 
     @DeleteMapping("/remove")

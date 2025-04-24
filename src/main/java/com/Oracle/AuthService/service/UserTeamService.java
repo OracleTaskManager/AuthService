@@ -25,6 +25,10 @@ public class UserTeamService {
         userTeamRepository.delete(userTeam);
     }
 
+    public List<UserTeam> findAll(){
+        return userTeamRepository.findAll();
+    }
+
     public void removeAllUsersFromTeam(Long team_id){
         userTeamRepository.deleteAllByTeamId(team_id);
     }
