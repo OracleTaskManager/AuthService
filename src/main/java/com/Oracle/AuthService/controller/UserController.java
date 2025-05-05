@@ -59,9 +59,15 @@ public class UserController {
         try{
             Authentication requestToken = new UsernamePasswordAuthenticationToken(userLogin.email(), userLogin.password());
             Authentication resultToken = authenticationManager.authenticate(requestToken);
+            User user = userService.login(userLogin);
             String JWTtoken = tokenService.generateToken((User) resultToken.getPrincipal());
 
-            return ResponseEntity.ok(new DatosJWTToken(JWTtoken));
+            Map<String, Object> response = Map.of(
+                    "token", JWTtoken,
+                    "user", new UserResponse(user.getUser_id(),user.getName(),user.getEmail(),user.getRole(),user.getWorkMode())
+            );
+
+            return ResponseEntity.ok(response);
         }catch(Exception e){
             System.out.println("Error during login: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();

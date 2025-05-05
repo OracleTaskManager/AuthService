@@ -27,6 +27,14 @@ public class UserService {
         return userRepository.save(user);
     }
 
+    public User login(UserLogin userLogin){
+        User user = userRepository.findByEmail(userLogin.email());
+        if (user == null || !passwordEncoder.matches(userLogin.password(), user.getPassword())) {
+            throw new IllegalArgumentException("Invalid email or password");
+        }
+        return user;
+    }
+
     public User findByTelegramChatId(TelegramLoginRequest telegramLoginRequest) {
         return userRepository.findByTelegramChatId(telegramLoginRequest.chatId());
     }

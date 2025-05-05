@@ -12,7 +12,9 @@ import java.util.List;
 @Repository
 public interface UserRepository extends JpaRepository<User, Long> {
 
-    UserDetails findByEmail(String subject);
+    User findByEmail(String subject);
+
+
 
     @Query("""
         SELECT u
