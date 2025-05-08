@@ -3,8 +3,6 @@ name: Build and Push Auth Service Image
 on:
   push:
     branches: [ main ]
-    paths:
-      - 'src/**'
 
 jobs:
   build-and-push:
