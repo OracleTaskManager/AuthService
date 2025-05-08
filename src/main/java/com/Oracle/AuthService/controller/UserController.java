@@ -56,7 +56,6 @@ public class UserController {
         }
     }
 
-    //Test
 
     @PostMapping("/register-admin")
     @PreAuthorize("hasRole('Manager')")
