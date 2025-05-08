@@ -13,7 +13,7 @@ jobs:
       NAMESPACE: axfvmmw9g9lu
       REPOSITORY: taskmanager
       IMAGE_NAME: auth-service
-      VERSION: 12 #Cambiar siempre que se haga un push
+      VERSION: 13 #Cambiar siempre que se haga un push
 
     steps:
       - name: Checkout code
@@ -78,19 +78,19 @@ jobs:
           password: ${{ secrets.OCI_AUTH_TOKEN }}
 
       - name: Build and Push Docker image
-        uses: docker/build-push-action@v2
-        with:
-          context: .
-          file: ./Dockerfile  # Usamos el Dockerfile temporal
-          push: true
-          tags: ${{ env.REGISTRY }}/${{ env.NAMESPACE }}/${{ env.REPOSITORY }}/${{ env.IMAGE_NAME }}:v${{ env.VERSION }}
+        run: |
+          #Construir la imagen
+          docker build -t ${{ env.REGISTRY }}/${{ env.NAMESPACE }}/${{ env.REPOSITORY }}/${{ env.IMAGE_NAME }}:v${{ env.VERSION }} -f Dockerfile .
+          
+          # Subir solo el tag
+            docker push ${{ env.REGISTRY }}/${{ env.NAMESPACE }}/${{ env.REPOSITORY }}/${{ env.IMAGE_NAME }}:v${{ env.VERSION }}
 
       - name: Print image details
         run: |
           echo "============================================"
           echo "Image successfully built and pushed!"
-          echo "Image: ${{ env.REGISTRY }}/${{ env.NAMESPACE }}/${{ env.REPOSITORY }}/${{ env.IMAGE_NAME }}:${{ env.VERSION }}"
+          echo "Image: ${{ env.REGISTRY }}/${{ env.NAMESPACE }}/${{ env.REPOSITORY }}/${{ env.IMAGE_NAME }}:v${{ env.VERSION }}"
           echo "============================================"
           echo "To update your Kubernetes deployment, run:"
-          echo "kubectl set image deployment/auth-service auth-service=${{ env.REGISTRY }}/${{ env.NAMESPACE }}/${{ env.REPOSITORY }}/${{ env.IMAGE_NAME }}:${{ env.VERSION }}"
+          echo "kubectl set image deployment/auth-service auth-service=${{ env.REGISTRY }}/${{ env.NAMESPACE }}/${{ env.REPOSITORY }}/${{ env.IMAGE_NAME }}:v${{ env.VERSION }}"
           echo "============================================"
