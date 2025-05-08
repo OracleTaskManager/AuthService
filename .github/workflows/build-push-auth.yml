@@ -84,7 +84,7 @@ jobs:
           file: ./Dockerfile  # Usamos el Dockerfile temporal
           push: true
           tags: |
-            ${{ env.REGISTRY }}/${{ env.NAMESPACE }}/${{ env.REPOSITORY }}/${{ env.IMAGE_NAME }}:${{ env.VERSION }}
+            ${{ env.REGISTRY }}/${{ env.NAMESPACE }}/${{ env.REPOSITORY }}/${{ env.IMAGE_NAME }}:v${{ env.VERSION }}
 
       - name: Print image details
         run: |
