@@ -6,6 +6,7 @@ import com.Oracle.AuthService.infra.security.TokenService;
 import com.Oracle.AuthService.model.User;
 import com.Oracle.AuthService.service.TelegramAuthService;
 import com.Oracle.AuthService.service.UserService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.apache.coyote.Response;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,6 +25,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/users")
+@Tag(name = "User", description = "User operations")
 public class UserController {
 
     @Autowired

@@ -28,9 +28,11 @@ public class SecurityConfig {
         return http.csrf(csrf -> csrf.disable())
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/swagger-ui.html","/v3/api-docs/**","swagger-ui/**")
+                        .requestMatchers("/swagger-ui.html","/v3/api-docs/**","/swagger-ui/**","/v3/api-docs/swagger-config","/swagger-resources/**","/webjars/**")
                         .permitAll()
-                        .requestMatchers(HttpMethod.POST,"users/login","users/register","users/telegram-login","/link-telegram").permitAll()
+                        .requestMatchers("/swagger-auth/**", "/swagger-auth/v3/api-docs/**", "/swagger-auth/swagger-ui/**")
+                        .permitAll()
+                        .requestMatchers(HttpMethod.POST,"/users/login","/users/register","/users/telegram-login","/link-telegram").permitAll()
                         .anyRequest().authenticated())
                 .addFilterBefore(securityFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
