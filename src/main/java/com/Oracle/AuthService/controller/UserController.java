@@ -56,6 +56,8 @@ public class UserController {
         }
     }
 
+    //Test
+
     @PostMapping("/register-admin")
     @PreAuthorize("hasRole('Manager')")
     public ResponseEntity<?> createAdmin(@RequestBody @Valid UserRegister userRegister){
