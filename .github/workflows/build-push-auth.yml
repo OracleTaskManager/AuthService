@@ -85,6 +85,9 @@ jobs:
           push: true
           tags: |
             ${{ env.REGISTRY }}/${{ env.NAMESPACE }}/${{ env.REPOSITORY }}/${{ env.IMAGE_NAME }}:v${{ env.VERSION }}
+          provenance: false
+          sbom: false
+          labels: {}
 
       - name: Print image details
         run: |
