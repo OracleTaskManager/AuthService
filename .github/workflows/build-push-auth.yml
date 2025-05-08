@@ -18,6 +18,15 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+        with:
+            fetch-depth: 0  # Fetch all history for all branches and tags
+
+      - name: Force checkout of wallet files
+        run: |
+          # Fuerza la restauración de archivos ignorados
+          git checkout -- Wallet_TelegramBotDatabase/
+          # Verifica que los archivos estén disponibles
+          ls -la Wallet_TelegramBotDatabase/
 
       - name: Set up JDK
         uses: actions/setup-java@v3
@@ -41,6 +50,9 @@ jobs:
         run: |
           mkdir -p build
           cp target/AuthService-0.0.1-SNAPSHOT.jar build/
+          # Copiamos el wallet
+          mkdir -p build/wallet
+          cp -r Wallet_TelegramBotDatabase/* build/wallet/
           
           # Crear un Dockerfile temporal que podamos usar en el contexto del repositorio
           cat > Dockerfile << EOF
@@ -48,13 +60,16 @@ jobs:
 
           # Directorio de trabajo en el contenedor
           WORKDIR /AuthService
-
-          # Copiar el archivo JAR al contenedor
-          COPY build/AuthService-0.0.1-SNAPSHOT.jar AuthService.jar
           
           # Creamos un directorio vacío para el wallet que se montará después
           RUN mkdir -p /wallet
 
+          # Copiar el archivo JAR al contenedor
+          COPY build/AuthService-0.0.1-SNAPSHOT.jar AuthService.jar
+          
+          # Copiar el wallet al contenedor
+          COPY build/wallet /wallet
+          
           # Exponer el puerto 8080
           EXPOSE 8080
 
@@ -62,6 +77,9 @@ jobs:
           ENV TNS_ADMIN=/wallet
           ENV ORACLE_HOME=/wallet
           ENV LD_LIBRARY_PATH=/wallet
+          
+          # Mostrar el contenido del directorio /wallet
+          RUN ls -la /wallet
 
           # Ejecutar la aplicación con la propiedad del sistema oracle.net.tns_admin
           ENTRYPOINT ["java", "-jar", "AuthService.jar"]
