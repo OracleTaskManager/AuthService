@@ -30,20 +30,19 @@ jobs:
 
       - name: Modify application.properties
         run: |
-          sed -i 's|TNS_ADMIN=C:/Users/cesar/Wallet_TelegramBotDatabase|TNS_ADMIN=/wallet|g' AuthService/src/main/resources/application.properties
+          sed -i 's|TNS_ADMIN=C:/Users/cesar/Wallet_TelegramBotDatabase|TNS_ADMIN=/wallet|g' src/main/resources/application.properties
           # Verificar el cambio
-          cat AuthService/src/main/resources/application.properties
+          cat src/main/resources/application.properties
 
       - name: Build with Maven
         run: |
-          cd AuthService
           mvn clean package -DskipTests
 
       # Movemos el JAR a una ubicación donde el Dockerfile pueda acceder
       - name: Prepare for Docker build
         run: |
           mkdir -p build
-          cp AuthService/target/AuthService-0.0.1-SNAPSHOT.jar build/
+          cp target/AuthService-0.0.1-SNAPSHOT.jar build/
           
           # Crear un Dockerfile temporal que podamos usar en el contexto del repositorio
           cat > Dockerfile << EOF
