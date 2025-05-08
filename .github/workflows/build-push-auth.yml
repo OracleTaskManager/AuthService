@@ -1,0 +1,100 @@
+name: Build and Push Auth Service Image
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'AuthService/**'
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    env:
+      REGISTRY: mx-queretaro-1.ocir.io
+      NAMESPACE: axfvmmw9g9lu
+      REPOSITORY: taskmanager
+      IMAGE_NAME: auth-service
+      VERSION: 11 #Cambiar siempre que se haga un push
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          java-version: '23'  # Cambia a '23' si estás usando JDK 23
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Modify application.properties
+        run: |
+          sed -i 's|TNS_ADMIN=C:/Users/cesar/Wallet_TelegramBotDatabase|TNS_ADMIN=/wallet|g' AuthService/src/main/resources/application.properties
+          # Verificar el cambio
+          cat AuthService/src/main/resources/application.properties
+
+      - name: Build with Maven
+        run: |
+          cd AuthService
+          mvn clean package -DskipTests
+
+      # Movemos el JAR a una ubicación donde el Dockerfile pueda acceder
+      - name: Prepare for Docker build
+        run: |
+          mkdir -p build
+          cp AuthService/target/AuthService-0.0.1-SNAPSHOT.jar build/
+          
+          # Crear un Dockerfile temporal que podamos usar en el contexto del repositorio
+          cat > Dockerfile << EOF
+          FROM eclipse-temurin:23-jre
+
+          # Directorio de trabajo en el contenedor
+          WORKDIR /AuthService
+
+          # Copiar el archivo JAR al contenedor
+          COPY build/AuthService-0.0.1-SNAPSHOT.jar AuthService.jar
+          
+          # Creamos un directorio vacío para el wallet que se montará después
+          RUN mkdir -p /wallet
+
+          # Exponer el puerto 8080
+          EXPOSE 8080
+
+          # Establecer la variable de entorno TNS_ADMIN
+          ENV TNS_ADMIN=/wallet
+          ENV ORACLE_HOME=/wallet
+          ENV LD_LIBRARY_PATH=/wallet
+
+          # Ejecutar la aplicación con la propiedad del sistema oracle.net.tns_admin
+          ENTRYPOINT ["java", "-jar", "AuthService.jar"]
+          EOF
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Login to Oracle Cloud Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ env.NAMESPACE }}/${{ secrets.OCI_USERNAME }}
+          password: ${{ secrets.OCI_AUTH_TOKEN }}
+
+      - name: Build and Push Docker image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: ./Dockerfile  # Usamos el Dockerfile temporal
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.NAMESPACE }}/${{ env.REPOSITORY }}/${{ env.IMAGE_NAME }}:${{ env.VERSION }}
+
+      - name: Print image details
+        run: |
+          echo "============================================"
+          echo "Image successfully built and pushed!"
+          echo "Image: ${{ env.REGISTRY }}/${{ env.NAMESPACE }}/${{ env.REPOSITORY }}/${{ env.IMAGE_NAME }}:${{ env.VERSION }}"
+          echo "============================================"
+          echo "To update your Kubernetes deployment, run:"
+          echo "kubectl set image deployment/auth-service auth-service=${{ env.REGISTRY }}/${{ env.NAMESPACE }}/${{ env.REPOSITORY }}/${{ env.IMAGE_NAME }}:${{ env.VERSION }}"
+          echo "============================================"

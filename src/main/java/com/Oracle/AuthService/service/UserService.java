@@ -20,9 +20,9 @@ public class UserService {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
-    public User register(UserRegister userRegister){
+    public User register(UserRegister userRegister, String role){
         String hashedPassword = passwordEncoder.encode(userRegister.password());
-        User user = new User(userRegister);
+        User user = new User(userRegister, role);
         user.setPassword(hashedPassword);
         return userRepository.save(user);
     }

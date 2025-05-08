@@ -43,7 +43,7 @@ public class UserController {
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody @Valid UserRegister userRegister){
         try{
-            User user = userService.register(userRegister);
+            User user = userService.register(userRegister, "Developer");
             String jwtToken = tokenService.generateToken(user);
             Map<String, Object> response = Map.of(
                     "token", jwtToken,
@@ -52,6 +52,23 @@ public class UserController {
             return ResponseEntity.ok(response);
         }catch (Exception e){
             System.out.println("Error during registration: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @PostMapping("/register-admin")
+    @PreAuthorize("hasRole('Manager')")
+    public ResponseEntity<?> createAdmin(@RequestBody @Valid UserRegister userRegister){
+        try{
+            User user = userService.register(userRegister, "Manager");
+            String jwtToken = tokenService.generateToken(user);
+            Map<String, Object> response = Map.of(
+                    "token", jwtToken,
+                    "user", new UserResponse(user.getUser_id(),user.getName(),user.getEmail(),user.getRole(),user.getWorkMode())
+            );
+            return ResponseEntity.ok(response);
+        }catch (Exception e){
+            System.out.println("Error during admin registration: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }

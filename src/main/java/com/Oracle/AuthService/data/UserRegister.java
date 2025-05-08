@@ -20,7 +20,6 @@ public record UserRegister(
         String password,
 
         WorkMode workMode,
-        Long telegramChatId,
-        String role
+        Long telegramChatId
 ) {
 }
