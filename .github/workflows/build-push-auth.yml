@@ -18,15 +18,23 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
-        with:
-            fetch-depth: 0  # Fetch all history for all branches and tags
 
-      - name: Force checkout of wallet files
+      - name: Recreate wallet files from secrets
         run: |
-          # Fuerza la restauración de archivos ignorados
-          git checkout -- Wallet_TelegramBotDatabase/
-          # Verifica que los archivos estén disponibles
-          ls -la Wallet_TelegramBotDatabase/
+          # Crear el directorio de wallet
+          mkdir -p wallet
+          
+          # Decodificar los secretos y crear los archivos
+          echo "${{ secrets.WALLET_CWALLET_SSO }}" | base64 -d > wallet/cwallet.sso
+          echo "${{ secrets.WALLET_TNSNAMES_ORA }}" | base64 -d > wallet/tnsnames.ora
+          echo "${{ secrets.WALLET_SQLNET_ORA }}" | base64 -d > wallet/sqlnet.ora
+          echo "${{ secrets.WALLET_EWALLET_P12 }}" | base64 -d > wallet/ewallet.p12
+    
+          # Establecer permisos correctos
+          chmod 600 wallet/*
+          
+          # Verificar la creación de los archivos
+          ls -la wallet/
 
       - name: Set up JDK
         uses: actions/setup-java@v3
@@ -52,7 +60,7 @@ jobs:
           cp target/AuthService-0.0.1-SNAPSHOT.jar build/
           # Copiamos el wallet
           mkdir -p build/wallet
-          cp -r Wallet_TelegramBotDatabase/* build/wallet/
+          cp -r wallet/* build/wallet/
           
           # Crear un Dockerfile temporal que podamos usar en el contexto del repositorio
           cat > Dockerfile << EOF
