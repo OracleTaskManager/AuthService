@@ -13,7 +13,7 @@ jobs:
       NAMESPACE: axfvmmw9g9lu
       REPOSITORY: taskmanager
       IMAGE_NAME: auth-service
-      VERSION: 14 #Cambiar siempre que se haga un push
+      VERSION: 15 #Cambiar siempre que se haga un push
 
     steps:
       - name: Checkout code
@@ -29,6 +29,11 @@ jobs:
           echo "${{ secrets.WALLET_TNSNAMES_ORA }}" | base64 -d > wallet/tnsnames.ora
           echo "${{ secrets.WALLET_SQLNET_ORA }}" | base64 -d > wallet/sqlnet.ora
           echo "${{ secrets.WALLET_EWALLET_P12 }}" | base64 -d > wallet/ewallet.p12
+          echo "${{ secrets.WALLET_KEYSTORE_JKS }}" | base64 -d > wallet/keystore.jks
+          echo "${{ secrets.WALLET_OJDBC_PROPERTIES }}" | base64 -d > wallet/ojdbc.properties
+          echo "${{ secrets.WALLET_EWALLET_PEM }}" | base64 -d > wallet/ewallet.pem
+          echo "${{ secrets.WALLET_README }}" | base64 -d > wallet/README
+          echo "${{ secrets.WALLET_TRUSTSTORE_JKS }}" | base64 -d > wallet/truststore.jks
     
           # Establecer permisos correctos
           chmod 600 wallet/*
@@ -76,7 +81,7 @@ jobs:
           COPY build/AuthService-0.0.1-SNAPSHOT.jar AuthService.jar
           
           # Copiar el wallet al contenedor
-          COPY build/wallet /wallet
+          COPY build/wallet /wallet/
           
           # Exponer el puerto 8080
           EXPOSE 8080
