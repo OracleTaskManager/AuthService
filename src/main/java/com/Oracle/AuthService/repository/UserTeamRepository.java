@@ -22,4 +22,10 @@ public interface UserTeamRepository extends JpaRepository<UserTeam, UserTeamId> 
     @Query("SELECT CASE WHEN COUNT(ut) > 0 THEN TRUE ELSE FALSE END FROM UserTeam ut WHERE ut.id.user_id = ?1 AND ut.id.team_id = ?2")
     boolean existsByUserIdAndTeamId(Long user_id, Long team_id);
 
+    @Query("SELECT ut FROM UserTeam ut WHERE ut.id.team_id = ?1")
+    List<UserTeam> findByTeamId(Long team_id);
+
+    @Query("SELECT ut.id.team_id FROM UserTeam ut WHERE ut.id.user_id = ?1" )
+    List<Long> findTeamIdsByUserId(Long user_id);
+
 }

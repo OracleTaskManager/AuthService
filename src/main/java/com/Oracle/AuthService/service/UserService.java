@@ -27,6 +27,10 @@ public class UserService {
         return userRepository.save(user);
     }
 
+    public User getUserById(Long user_id){
+        return userRepository.findById(user_id).orElseThrow(() -> new IllegalArgumentException("User not found"));
+    }
+
     public User login(UserLogin userLogin){
         User user = userRepository.findByEmail(userLogin.email());
         if (user == null || !passwordEncoder.matches(userLogin.password(), user.getPassword())) {

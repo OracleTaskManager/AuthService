@@ -1,5 +1,6 @@
 package com.Oracle.AuthService.controller;
 
+import com.Oracle.AuthService.data.TeamResponse;
 import com.Oracle.AuthService.data.UserTeamIdResponse;
 import com.Oracle.AuthService.data.UserTeamRegister;
 import com.Oracle.AuthService.model.UserTeam;
@@ -12,7 +13,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/userteams")
@@ -64,6 +68,25 @@ public class UserTeamController {
         }catch (Exception e){
             System.out.println("Error during user team deletion: " + e.getMessage());
         }
+    }
+
+    @GetMapping("/{userId}")
+    @PreAuthorize("hasRole('Manager')")
+    public ResponseEntity<List<Map<String, Object>>> getTeamsByUserId(@PathVariable Long userId) {
+        List<TeamResponse> teams = userTeamService.getTeamsByUserId(userId);
+
+        // Convertir a formato Map para compatibilidad con el cliente Feign
+        List<Map<String, Object>> response = teams.stream()
+                .map(team -> {
+                    Map<String, Object> teamMap = new HashMap<>();
+                    teamMap.put("team_id", team.team_id());
+                    teamMap.put("team_name", team.team_name());
+                    teamMap.put("created_at", team.created_at());
+                    return teamMap;
+                })
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(response);
     }
 
 }

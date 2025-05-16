@@ -28,6 +28,15 @@ public class TeamService {
         return teamRepository.findTeamByUserId(user_id);
     }
 
+    public Team getTeamById(Long team_id){
+        return teamRepository.findById(team_id).get();
+    }
+
+    public List<Team> getTeamsByIds(List<Long> teamIds) {
+        // Utilizamos findAllById que ya proviene de JpaRepository
+        return teamRepository.findAllById(teamIds);
+    }
+
     public Team updateTeam(TeamUpdate teamUpdate){
         Team team = teamRepository.findById(teamUpdate.teamId()).get();
         team.setTeam_name(teamUpdate.teamName());

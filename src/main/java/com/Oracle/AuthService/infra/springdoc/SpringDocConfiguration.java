@@ -1,4 +1,4 @@
-package com.Oracle.AuthService.infra.security.springdoc;
+package com.Oracle.AuthService.infra.springdoc;
 
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.servers.Server;

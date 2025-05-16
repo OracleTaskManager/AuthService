@@ -170,6 +170,21 @@ public class UserController {
         }
     }
 
+    @GetMapping("/{user_id}")
+    public ResponseEntity<?> getUser(@PathVariable Long user_id){
+        try{
+            User user = userService.getUserById(user_id);
+            if(user == null){
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
+            }
+            UserResponse userResponse = new UserResponse(user.getUser_id(),user.getName(),user.getEmail(),user.getRole(),user.getWorkMode());
+            return ResponseEntity.ok(userResponse);
+        }catch(Exception e){
+            System.out.println("Error fetching user: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
     @GetMapping
     @PreAuthorize("hasRole('Manager')")
     public ResponseEntity<List<UserResponse>> getUsers(
