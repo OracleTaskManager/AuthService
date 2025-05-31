@@ -43,6 +43,14 @@ public class UserService {
         return userRepository.findByTelegramChatId(telegramLoginRequest.chatId());
     }
 
+    public User validateUserCredentials(String email, String password) {
+        User user = userRepository.findByEmail(email);
+        if (user == null || !passwordEncoder.matches(password, user.getPassword())) {
+            return null; // Credenciales inválidas
+        }
+        return user;
+    }
+
     public void linkTelegramAccount(Long user_id, Long telegramChatId){
         User user = userRepository.findById(user_id).orElseThrow(() -> new IllegalArgumentException("User not found"));
         if(userRepository.existsByTelegramChatId(telegramChatId)){

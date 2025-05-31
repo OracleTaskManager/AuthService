@@ -120,6 +120,38 @@ public class UserController {
 
     @PostMapping("/link-telegram")
     public ResponseEntity<?> linkTelegramAccount(
+            @RequestHeader("X-Telegram-Bot-Secret") String incomingSecret,
+            @RequestBody @Valid TelegramLinkRequest telegramLinkRequest
+    ){
+        try{
+            if(!telegramAuthService.validateRequest(incomingSecret)){
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Invalid bot secret");
+            }
+
+            User user = userService.validateUserCredentials(
+                    telegramLinkRequest.email(),
+                    telegramLinkRequest.password()
+            );
+
+            if(user == null){
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid email or password");
+            }
+
+            userService.linkTelegramAccount(user.getUser_id(), telegramLinkRequest.chatId());
+
+            return ResponseEntity.ok("Telegram account linked successfully");
+
+        }catch (IllegalArgumentException e){
+            System.out.println("Error linking Telegram account: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid data provided");
+        }catch (Exception e){
+            System.out.println("Error linking Telegram account: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @PostMapping("/link-telegram-authenticated")
+    public ResponseEntity<?> linkTelegramAccountAuthenticated(
             @RequestHeader("Authorization") String token,
             @RequestParam Long chatId
     ){
