@@ -32,7 +32,14 @@ public class SecurityConfig {
                         .permitAll()
                         .requestMatchers("/swagger-auth/**", "/swagger-auth/v3/api-docs/**", "/swagger-auth/swagger-ui/**")
                         .permitAll()
-                        .requestMatchers(HttpMethod.POST,"/users/login","/users/register","/users/telegram-login","/users/link-telegram").permitAll()
+                        // ✅ ENDPOINTS PÚBLICOS (sin autenticación)
+                        .requestMatchers(HttpMethod.POST,
+                                "/users/login",
+                                "/users/register",
+                                "/users/telegram-login",      // Solo para bot (con bot_secret)
+                                "/users/telegram-link",       // Solo para bot (con bot_secret)
+                                "/users/link-telegram-web"    // Para frontend web (sin bot_secret)
+                        ).permitAll()
                         .anyRequest().authenticated())
                 .addFilterBefore(securityFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
@@ -40,7 +47,7 @@ public class SecurityConfig {
 
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration)
-        throws Exception{
+            throws Exception{
         return authenticationConfiguration.getAuthenticationManager();
     }
 
@@ -48,5 +55,4 @@ public class SecurityConfig {
     PasswordEncoder passwordEncoder(){
         return new BCryptPasswordEncoder();
     }
-
 }
