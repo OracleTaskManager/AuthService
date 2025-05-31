@@ -1,0 +1,355 @@
+version: 0.1
+component: build
+timeoutInSeconds: 1200
+shell: bash
+
+env:
+  variables:
+    REGISTRY: "mx-queretaro-1.ocir.io"
+    NAMESPACE: "axfvmmw9g9lu"
+    REPOSITORY: "taskmanager"
+    IMAGE_NAME: "auth-service"
+
+  exportedVariables:
+    - IMAGE_FULL_NAME
+    - VERSION
+
+steps:
+  - type: Command
+    name: "Install Oracle Java 23"
+    timeoutInSeconds: 600
+    command: |
+      echo "🔧 Installing Oracle Java 23..."
+      
+      cd /opt
+      
+      # Descargar Oracle JDK 23 desde Oracle
+      wget -q --no-check-certificate https://download.oracle.com/java/23/latest/jdk-23_linux-x64_bin.tar.gz -O oracle-jdk-23.tar.gz
+      
+      if [ -f "oracle-jdk-23.tar.gz" ]; then
+        echo "✅ Oracle JDK 23 downloaded successfully"
+        tar -xzf oracle-jdk-23.tar.gz
+        JAVA23_DIR=$(find /opt -maxdepth 1 -name "jdk-23*" -type d | head -1)
+        if [ ! -z "$JAVA23_DIR" ]; then
+          ln -sf "$JAVA23_DIR" /opt/java23
+          echo "✅ Oracle Java 23 installed: $JAVA23_DIR"
+        else
+          echo "⚠️ Oracle JDK extraction failed, trying alternative..."
+          # Fallback a Amazon Corretto 23
+          wget -q https://corretto.aws/downloads/latest/amazon-corretto-23-x64-linux-jdk.tar.gz
+          tar -xzf amazon-corretto-23-x64-linux-jdk.tar.gz
+          JAVA23_DIR=$(find /opt -maxdepth 1 -name "amazon-corretto-23*" -type d | head -1)
+          ln -sf "$JAVA23_DIR" /opt/java23
+          echo "✅ Amazon Corretto 23 installed as fallback: $JAVA23_DIR"
+        fi
+      else
+        echo "❌ Oracle JDK download failed, using Amazon Corretto 23..."
+        wget -q https://corretto.aws/downloads/latest/amazon-corretto-23-x64-linux-jdk.tar.gz
+        tar -xzf amazon-corretto-23-x64-linux-jdk.tar.gz
+        JAVA23_DIR=$(find /opt -maxdepth 1 -name "amazon-corretto-23*" -type d | head -1)
+        ln -sf "$JAVA23_DIR" /opt/java23
+        echo "✅ Amazon Corretto 23 installed: $JAVA23_DIR"
+      fi
+      
+      echo "✅ Java 23 installation completed"
+
+  - type: Command
+    name: "Recreate wallet files with correct secret handling"
+    timeoutInSeconds: 300
+    command: |
+      echo "🔐 Recreating wallet files with CORRECT secret type handling..."
+      
+      # Crear directorios
+      mkdir -p wallet
+      
+      # Función para archivos guardados como TEXTO PLANO en vault
+      get_plaintext_secret() {
+        local secret_id=$1
+        local output_file=$2
+      
+        echo "📄 Getting PLAINTEXT secret for: $(basename $output_file)"
+      
+        local content=$(oci secrets secret-bundle get --secret-id "$secret_id" --stage LATEST --query 'data."secret-bundle-content".content' --raw-output 2>/dev/null)
+        if [ $? -ne 0 ] || [ -z "$content" ]; then
+          echo "❌ Failed to get secret $secret_id"
+          return 1
+        fi
+      
+        # UNA sola decodificación base64 (Oracle Vault auto-encode)
+        echo "$content" | base64 -d > "$output_file"
+      
+        local file_size=$(wc -c < "$output_file")
+        echo "📏 Plaintext file size: $file_size bytes"
+        return 0
+      }
+      
+      # Función para archivos guardados como BASE64 en vault
+      get_base64_secret() {
+        local secret_id=$1
+        local output_file=$2
+      
+        echo "🔢 Getting BASE64 secret for: $(basename $output_file)"
+      
+        local content=$(oci secrets secret-bundle get --secret-id "$secret_id" --stage LATEST --query 'data."secret-bundle-content".content' --raw-output 2>/dev/null)
+        if [ $? -ne 0 ] || [ -z "$content" ]; then
+          echo "❌ Failed to get secret $secret_id"
+          return 1
+        fi
+      
+        # DOBLE decodificación: Oracle Vault auto-encode + tu base64 original
+        local decoded_vault=$(echo "$content" | base64 -d 2>/dev/null)
+        if [ $? -ne 0 ]; then
+          echo "❌ Failed vault base64 decode"
+          return 1
+        fi
+      
+        echo "$decoded_vault" | base64 -d > "$output_file"
+        if [ $? -ne 0 ]; then
+          echo "⚠️ Second decode failed, using single decode"
+          echo "$decoded_vault" > "$output_file"
+        fi
+      
+        local file_size=$(wc -c < "$output_file")
+        echo "📏 Base64 file size: $file_size bytes"
+      
+        # Verificación específica para archivos JKS
+        if [[ "$output_file" == *.jks ]]; then
+          local jks_signature=$(xxd -l 4 -p "$output_file" 2>/dev/null | tr '[:lower:]' '[:upper:]')
+          if [[ "$jks_signature" == "FEEDFEED"* ]]; then
+            echo "✅ Valid JKS signature: $jks_signature"
+          else
+            echo "⚠️ JKS signature: $jks_signature (may be invalid)"
+          fi
+        fi
+      
+        return 0
+      }
+      
+      echo "📋 Processing secrets with correct type handling..."
+      
+      # ARCHIVOS GUARDADOS COMO TEXTO PLANO EN VAULT (single decode)
+      echo "📄 Processing PLAINTEXT files..."
+      get_plaintext_secret "$WALLET_TNSNAMES_ORA_OCID" "wallet/tnsnames.ora" || true
+      get_plaintext_secret "$WALLET_SQLNET_ORA_OCID" "wallet/sqlnet.ora" || true
+      get_plaintext_secret "$WALLET_OJDBC_PROPERTIES_OCID" "wallet/ojdbc.properties" || true
+      get_plaintext_secret "$WALLET_EWALLET_PEM_OCID" "wallet/ewallet.pem" || true
+      
+      # README si existe (plaintext)
+      if [ ! -z "$WALLET_README_OCID" ]; then
+        get_plaintext_secret "$WALLET_README_OCID" "wallet/README" || true
+      fi
+      
+      # ARCHIVOS GUARDADOS COMO BASE64 EN VAULT (double decode)
+      echo "🔢 Processing BASE64 files..."
+      get_base64_secret "$WALLET_CWALLET_SSO_OCID" "wallet/cwallet.sso" || true
+      get_base64_secret "$WALLET_EWALLET_P12_OCID" "wallet/ewallet.p12" || true
+      get_base64_secret "$WALLET_KEYSTORE_JKS_OCID" "wallet/keystore.jks" || true
+      get_base64_secret "$WALLET_TRUSTSTORE_JKS_OCID" "wallet/truststore.jks" || true
+      
+      # Configurar permisos
+      chmod 600 wallet/* 2>/dev/null || true
+      
+      echo "✅ Wallet files recreated with correct secret handling!"
+      
+      echo "📋 Final wallet contents:"
+      ls -la wallet/
+      
+      # Verificaciones específicas
+      echo "🔍 Verification checks:"
+      
+      # Verificar archivos de texto
+      if [ -f "wallet/tnsnames.ora" ]; then
+        echo "✅ tnsnames.ora: $(wc -c < wallet/tnsnames.ora) bytes"
+        echo "   📄 First line: $(head -1 wallet/tnsnames.ora)"
+      fi
+      
+      if [ -f "wallet/sqlnet.ora" ]; then
+        echo "✅ sqlnet.ora: $(wc -c < wallet/sqlnet.ora) bytes"
+        echo "   📄 Content preview: $(head -2 wallet/sqlnet.ora)"
+      fi
+      
+      # Verificar archivos binarios críticos
+      for file in wallet/cwallet.sso wallet/ewallet.p12 wallet/keystore.jks wallet/truststore.jks; do
+        if [ -f "$file" ]; then
+          size=$(wc -c < "$file")
+          echo "✅ $(basename $file): $size bytes"
+          if [ $size -eq 0 ]; then
+            echo "    ⚠️ WARNING: $(basename $file) is empty!"
+          fi
+        fi
+      done
+
+  - type: Command
+    name: "Modify application.properties"
+    timeoutInSeconds: 60
+    command: |
+      echo "🔧 Modifying application.properties..."
+      
+      if [ -f "src/main/resources/application.properties" ]; then
+        # Backup original
+        cp src/main/resources/application.properties src/main/resources/application.properties.backup
+      
+        # Mismo cambio que GitHub Actions
+        sed -i 's|TNS_ADMIN=C:/Users/cesar/Wallet_TelegramBotDatabase|TNS_ADMIN=/wallet|g' src/main/resources/application.properties
+      
+        echo "✅ application.properties modified successfully"
+        echo "📋 Modified application.properties:"
+        cat src/main/resources/application.properties
+      else
+        echo "⚠️ application.properties not found, skipping modification"
+      fi
+
+  - type: Command
+    name: "Build with Maven using Java 23"
+    timeoutInSeconds: 900
+    command: |
+      # Configurar Java 23
+      export JAVA_HOME=/opt/java23
+      export PATH=$JAVA_HOME/bin:$PATH
+      
+      echo "☕ Verifying Java 23 installation:"
+      java -version
+      javac -version
+      echo "🔧 JAVA_HOME: $JAVA_HOME"
+      
+      echo "📋 Maven version:"
+      mvn -version
+      
+      echo "🚀 Building with Maven (Java 23)..."
+      
+      # Build con Java 23 (igual que GitHub Actions)
+      mvn clean package -DskipTests \
+          -Dmaven.compiler.source=23 \
+          -Dmaven.compiler.target=23 \
+          -Dmaven.compiler.release=23
+      
+      echo "📦 Build completed, checking results:"
+      ls -la target/
+      
+      # Verificar que el JAR se generó (AuthService en lugar de TaskService)
+      if [ ! -f "target/AuthService-0.0.1-SNAPSHOT.jar" ]; then
+        echo "❌ Expected AuthService JAR file not found!"
+        echo "📋 Searching for alternative JAR names:"
+        find target/ -name "*.jar" 2>/dev/null || echo "No JAR files found in target/"
+        exit 1
+      fi
+      
+      JAR_SIZE=$(stat -c%s "target/AuthService-0.0.1-SNAPSHOT.jar" 2>/dev/null || stat -f%z "target/AuthService-0.0.1-SNAPSHOT.jar")
+      echo "📦 JAR size: $JAR_SIZE bytes"
+      
+      if [ "$JAR_SIZE" -lt 1000000 ]; then
+        echo "⚠️ JAR seems small for a Spring Boot app"
+      fi
+      
+      echo "✅ Maven build successful with Java 23!"
+
+  - type: Command
+    name: "Prepare Docker build"
+    timeoutInSeconds: 120
+    command: |
+      echo "📦 Preparing Docker build context..."
+      
+      mkdir -p build build/wallet
+      
+      echo "Copying AuthService JAR to build directory..."
+      cp target/AuthService-0.0.1-SNAPSHOT.jar build/
+      
+      echo "Copying wallet files..."
+      cp -r wallet/* build/wallet/ 2>/dev/null || true
+      
+      echo "Build directory contents:"
+      ls -la build/
+      echo "Build wallet contents:"
+      ls -la build/wallet/
+      
+      echo "Creating Dockerfile (GitHub Actions style with Oracle JRE)..."
+      cat > Dockerfile << 'EOF'
+      FROM container-registry.oracle.com/graalvm/jdk:23
+      
+      # Mostrar versión de Java para verificar
+      RUN java -version
+      
+      # Directorio de trabajo en el contenedor (igual que GitHub Actions)
+      WORKDIR /AuthService
+      
+      # Creamos un directorio para el wallet
+      RUN mkdir -p /wallet
+      
+      # Copiar el archivo JAR al contenedor (igual que GitHub Actions)
+      COPY build/AuthService-0.0.1-SNAPSHOT.jar AuthService.jar
+      
+      # Copiar el wallet al contenedor (igual que GitHub Actions)
+      COPY build/wallet /wallet/
+      
+      # Exponer el puerto 8080 (igual que GitHub Actions)
+      EXPOSE 8080
+      
+      # Establecer las variables de entorno (igual que GitHub Actions)
+      ENV TNS_ADMIN=/wallet
+      ENV ORACLE_HOME=/wallet
+      ENV LD_LIBRARY_PATH=/wallet
+      
+      # Mostrar el contenido del directorio /wallet (igual que GitHub Actions)
+      RUN ls -la /wallet
+      
+      # Ejecutar la aplicación (igual que GitHub Actions)
+      ENTRYPOINT ["java", "-jar", "AuthService.jar"]
+      EOF
+      
+      echo "✅ Docker build context prepared (AuthService with Oracle Java 23)"
+
+  - type: Command
+    name: "Build Docker image (NO PUSH)"
+    timeoutInSeconds: 900
+    command: |
+      # Generar versión
+      VERSION="$(date +'%Y%m%d-%H%M%S')"
+      if [ -d ".git" ]; then
+        COMMIT_SHORT=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+        VERSION="${VERSION}-${COMMIT_SHORT}"
+      fi
+      
+      IMAGE_TAG="${REGISTRY}/${NAMESPACE}/${REPOSITORY}/${IMAGE_NAME}:${VERSION}"
+      
+      echo "🐳 Building Docker image: ${IMAGE_TAG}"
+      
+      echo "🚀 Building Docker image (no-cache, NO PUSH)..."
+      docker build --no-cache -t "${IMAGE_TAG}" .
+      
+      if [ $? -ne 0 ]; then
+        echo "❌ Docker build failed!"
+        exit 1
+      fi
+      
+      echo "✅ Docker image built successfully!"
+      
+      # Test opcional de la imagen
+      echo "🧪 Testing image locally..."
+      docker run --name test-container -d "${IMAGE_TAG}"
+      
+      echo "📋 Container logs (first 15 seconds):"
+      sleep 15
+      docker logs test-container || echo "Error getting logs"
+      
+      echo "🧹 Cleaning up test container..."
+      docker rm -f test-container || echo "Error removing container"
+      
+      # Exportar variables para el deployment pipeline
+      export IMAGE_FULL_NAME="${IMAGE_TAG}"
+      export VERSION="${VERSION}"
+      
+      echo "============================================"
+      echo "✅ AUTHSERVICE BUILD COMPLETED (READY FOR DEPLOYMENT)!"
+      echo "📦 Image: ${IMAGE_FULL_NAME}"
+      echo "🏷️ Version: ${VERSION}"
+      echo "============================================"
+      echo ""
+      echo "🚀 Ready for deployment pipeline to:"
+      echo "   1. Push image: ${IMAGE_FULL_NAME}"
+      echo "   2. Apply Kubernetes manifest with version: ${VERSION}"
+      echo "============================================"
+
+outputArtifacts:
+  - name: auth-service-image
+    type: DOCKER_IMAGE
+    location: ${IMAGE_FULL_NAME}
