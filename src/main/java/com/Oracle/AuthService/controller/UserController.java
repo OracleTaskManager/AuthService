@@ -56,7 +56,6 @@ public class UserController {
         }
     }
 
-
     @PostMapping("/register-admin")
     @PreAuthorize("hasRole('Manager')")
     public ResponseEntity<?> createAdmin(@RequestBody @Valid UserRegister userRegister){
@@ -94,16 +93,19 @@ public class UserController {
         }
     }
 
+    // 🔒 ENDPOINT SEGURO - Solo para el bot de Telegram (con bot_secret)
     @PostMapping("/telegram-login")
     public ResponseEntity<?> telegramLogin(
             @RequestHeader("X-Telegram-Bot-Secret") String incomingSecret,
             @RequestBody @Valid TelegramLoginRequest telegramLoginRequest){
         try{
-            telegramAuthService.validateRequest(incomingSecret);
+            if (!telegramAuthService.validateRequest(incomingSecret)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Invalid bot secret");
+            }
 
             User user = userService.findByTelegramChatId(telegramLoginRequest);
             if(user == null){
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User not found");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User not found or not linked");
             }
             String jwtToken = tokenService.generateToken(user);
 
@@ -118,51 +120,74 @@ public class UserController {
         }
     }
 
-    @PostMapping("/link-telegram")
-    public ResponseEntity<?> linkTelegramAccount(
+    // 🔒 ENDPOINT SEGURO - Solo para el bot de Telegram (con bot_secret)
+    @PostMapping("/telegram-link")
+    public ResponseEntity<?> telegramLinkAccount(
             @RequestHeader("X-Telegram-Bot-Secret") String incomingSecret,
             @RequestBody @Valid TelegramLinkRequest telegramLinkRequest
     ){
         try{
-            if(!telegramAuthService.validateRequest(incomingSecret)){
+            // Validar bot secret
+            if (!telegramAuthService.validateRequest(incomingSecret)) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Invalid bot secret");
             }
 
+            // Verificar credenciales del usuario
             User user = userService.validateUserCredentials(
                     telegramLinkRequest.email(),
                     telegramLinkRequest.password()
             );
 
-            if(user == null){
+            if (user == null) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid email or password");
             }
 
+            // Vincular la cuenta de Telegram
             userService.linkTelegramAccount(user.getUser_id(), telegramLinkRequest.chatId());
 
-            return ResponseEntity.ok("Telegram account linked successfully");
+            return ResponseEntity.ok(Map.of(
+                    "message", "Telegram account linked successfully",
+                    "userId", user.getUser_id(),
+                    "userName", user.getName()
+            ));
 
         }catch (IllegalArgumentException e){
             System.out.println("Error linking Telegram account: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid data provided");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }catch (Exception e){
             System.out.println("Error linking Telegram account: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
-    @PostMapping("/link-telegram-authenticated")
-    public ResponseEntity<?> linkTelegramAccountAuthenticated(
-            @RequestHeader("Authorization") String token,
-            @RequestParam Long chatId
+    // 🌐 ENDPOINT PÚBLICO - Para usuarios desde el frontend web (SIN bot_secret)
+    @PostMapping("/link-telegram-web")
+    public ResponseEntity<?> linkTelegramAccountWeb(
+            @RequestBody @Valid TelegramLinkRequest telegramLinkRequest
     ){
         try{
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            Long userId = ((User) authentication.getPrincipal()).getUser_id();
+            // Verificar credenciales del usuario
+            User user = userService.validateUserCredentials(
+                    telegramLinkRequest.email(),
+                    telegramLinkRequest.password()
+            );
 
-            userService.linkTelegramAccount(userId, chatId);
+            if (user == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid email or password");
+            }
 
-            return ResponseEntity.ok("Telegram account linked successfully");
+            // Vincular la cuenta de Telegram
+            userService.linkTelegramAccount(user.getUser_id(), telegramLinkRequest.chatId());
 
+            return ResponseEntity.ok(Map.of(
+                    "message", "Telegram account linked successfully",
+                    "userId", user.getUser_id(),
+                    "userName", user.getName()
+            ));
+
+        }catch (IllegalArgumentException e){
+            System.out.println("Error linking Telegram account: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }catch (Exception e){
             System.out.println("Error linking Telegram account: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
@@ -227,5 +252,4 @@ public class UserController {
         List<UserResponse> users = userService.getUsersFiltered(role,workMode,isActive);
         return ResponseEntity.ok(users);
     }
-
 }

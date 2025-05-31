@@ -32,7 +32,7 @@ public class SecurityConfig {
                         .permitAll()
                         .requestMatchers("/swagger-auth/**", "/swagger-auth/v3/api-docs/**", "/swagger-auth/swagger-ui/**")
                         .permitAll()
-                        .requestMatchers(HttpMethod.POST,"/users/login","/users/register","/users/telegram-login","/link-telegram").permitAll()
+                        .requestMatchers(HttpMethod.POST,"/users/login","/users/register","/users/telegram-login","/users/link-telegram").permitAll()
                         .anyRequest().authenticated())
                 .addFilterBefore(securityFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
