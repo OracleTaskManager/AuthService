@@ -38,7 +38,8 @@ public class SecurityConfig {
                                 "/users/register",
                                 "/users/telegram-login",      // Solo para bot (con bot_secret)
                                 "/users/telegram-link",       // Solo para bot (con bot_secret)
-                                "/users/link-telegram-web"    // Para frontend web (sin bot_secret)
+                                "/users/link-telegram-web",    // Para frontend web (sin bot_secret)
+                                "/users/forgot-password"
                         ).permitAll()
                         .anyRequest().authenticated())
                 .addFilterBefore(securityFilter, UsernamePasswordAuthenticationFilter.class)

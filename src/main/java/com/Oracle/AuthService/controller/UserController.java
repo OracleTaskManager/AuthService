@@ -214,6 +214,17 @@ public class UserController {
         }
     }
 
+    @PostMapping("/forgot-password")
+    public ResponseEntity<?> forgotPassword(@RequestBody @Valid UpdatePasswordRequest updatePasswordRequest){
+        try{
+            userService.forgotPassword(updatePasswordRequest);
+            return ResponseEntity.ok(Map.of("message", "Password reset link sent to your email"));
+        }catch (Exception e){
+            System.out.println("Error during password reset: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
     @DeleteMapping("/")
     public ResponseEntity<?> deleteUser(){
         try{

@@ -82,6 +82,22 @@ public class UserService {
         return user;
     }
 
+    public ResponseEntity<?> forgotPassword(UpdatePasswordRequest updatePasswordRequest){
+        try{
+            User user = userRepository.findByEmail(updatePasswordRequest.email());
+            if (user == null) {
+                return ResponseEntity.status(404).body("User not found");
+            }
+            String hashedPassword = passwordEncoder.encode(updatePasswordRequest.newPassword());
+            user.setPassword(hashedPassword);
+            userRepository.save(user);
+            return ResponseEntity.ok("Password updated successfully");
+
+        } catch(Exception e) {
+            return ResponseEntity.status(500).body("Error updating password: " + e.getMessage());
+        }
+    }
+
     public ResponseEntity<?> deleteUser(Long user_id){
         User user = userRepository.findById(user_id).get();
         userRepository.delete(user);
